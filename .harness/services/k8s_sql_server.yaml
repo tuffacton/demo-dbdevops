@@ -1,0 +1,49 @@
+service:
+  name: k8s sql server
+  identifier: k8s_sql_server
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      manifests:
+        - manifest:
+            identifier: sqlserver
+            type: K8sManifest
+            spec:
+              store:
+                type: Github
+                spec:
+                  connectorRef: demodbdevops
+                  gitFetchType: Branch
+                  paths:
+                    - setup/k8s_sql.yml
+                  repoName: demo-dbdevops
+                  branch: main
+              skipResourceVersioning: false
+              enableDeclarativeRollback: false
+        - manifest:
+            identifier: valuesyml
+            type: Values
+            spec:
+              store:
+                type: Github
+                spec:
+                  connectorRef: demodbdevops
+                  gitFetchType: Branch
+                  paths:
+                    - setup/values.yml
+                  repoName: demo-dbdevops
+                  branch: main
+      variables:
+        - name: secret
+          type: String
+          description: ""
+          required: false
+          value: <+secrets.getValue("org.mysql_sa_password")>
+        - name: namespace
+          type: String
+          description: ""
+          required: false
+          value: default
+  gitOpsEnabled: false
+  orgIdentifier: default
+  projectIdentifier: default_project

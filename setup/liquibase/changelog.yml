@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: satwell:1
+      author: satwell
+      comment: create the db
+      changes:
+        - sql: 
+            dbms: 'mssql'
+            sql: |
+              use master;
+              Go;
+              IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'harness-demo')
+              BEGIN
+                CREATE DATABASE MyTestDataBase;
+                CREATE DATABASE Administration;
+              END;
+              GO
+
+
+
+

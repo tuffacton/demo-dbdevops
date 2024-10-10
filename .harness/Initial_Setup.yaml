@@ -1,0 +1,696 @@
+pipeline:
+  name: Initial Setup
+  identifier: Initial_Setup
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: Create Base Connectors
+        identifier: createAdditionalConnectors
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: createKubernetesCluster
+                      identifier: createKubernetesCluster
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/ng/api/connectors' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                  "connector": {
+                                    "name": "k8s cluster try 3",
+                                    "identifier": "k8s_cluster_try_3",
+                                    "description": "",
+                                    "accountIdentifier": "<+account.identifier>",
+                                    "orgIdentifier": "<+org.identifier>",
+                                    "projectIdentifier": "<+project.identifier>",
+                                    "type": "K8sCluster",
+                                    "spec": {
+                                      "credential":{
+                                        "type": "InheritFromDelegate"
+                                      },
+                                      "delegateSelectors": ["demo-delegate"]
+                                    }
+                                  }
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: "false"
+                  - step:
+                      type: ShellScript
+                      name: Create DB Schema
+                      identifier: Create_DB_Schema
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/v1/orgs/<+org.identifier>/projects/<+project.identifier>/dbschema' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                    "changelog": {
+                                      "connector": "demodbdevops",
+                                      "location": "liquibase/example-changelog.yaml",
+                                      "repo": "demo-dbdevops"
+                                    },
+                                    "identifier": "db_devops_demo",
+                                    "name": "db devops demo"
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: Ignore
+                  - step:
+                      type: ShellScript
+                      name: Create Setup DB Schema
+                      identifier: Create_Setup_DB_Schema
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/v1/orgs/<+org.identifier>/projects/<+project.identifier>/dbschema' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                    "changelog": {
+                                      "connector": "demodbdevops",
+                                      "location": "setup/liquibase/changelog.yml",
+                                      "repo": "demo-dbdevops"
+                                    },
+                                    "identifier": "Initial_Setup",
+                                    "name": "Initial Setup"
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: Ignore
+                  - step:
+                      type: ShellScript
+                      name: ShellScript_4
+                      identifier: ShellScript_4
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - demo-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: kubectl create ns yogeshc
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+        tags: {}
+    - stage:
+        name: create namespaces and per DB config
+        identifier: create_namespaces
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: create Namespaces
+                      identifier: createDBConnectors
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: kubectl create ns <+repeat.item>
+                        environmentVariables: []
+                        outputVariables: []
+                        delegateSelectors:
+                          - demo-delegate
+                      timeout: 10m
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: Ignore
+                  - step:
+                      type: ShellScript
+                      name: make idenditifier
+                      identifier: make_idenditifier
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |
+                              #!/bin/bash -v
+
+                              # Convert the Unix timestamp to seconds (since it is in milliseconds)
+                              identifier="${item//-/_}"
+                              arrIN=(${item//-/ })
+                              environment=${arrIN[0]}
+                        environmentVariables:
+                          - name: item
+                            type: String
+                            value: <+repeat.item>
+                        outputVariables:
+                          - name: identifier
+                            type: String
+                            value: identifier
+                          - name: environment
+                            type: String
+                            value: environment
+                      timeout: 10m
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: Create DB Connectors
+                      identifier: ShellScript_2
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/ng/api/connectors' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                  "connector": {
+                                    "name": "<+repeat.item>",
+                                    "identifier": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>",
+                                    "description": "",
+                                    "orgIdentifier": "<+org.identifier>",
+                                    "projectIdentifier": "<+project.identifier>",
+                                    "type": "JDBC",
+                                    "spec": {
+                                      "type": "JDBC",
+                                      "url": "jdbc:sqlserver://sql-server-service.<+repeat.item>;database=MyTestDataBase;trustServerCertificate=true",
+                                      "auth": {
+                                        "type": "UsernamePassword",
+                                        "spec": {
+                                          "username": "sa",
+                                          "passwordRef": "mysql_sa_password"
+                                        }
+                                      },
+                                      "delegateSelectors": ["<+pipeline.variables.delegate_name>"]
+                                    }
+                                  }
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Create DB Setup Connectors
+                      identifier: Create_DB_Setup_Connectors
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/ng/api/connectors' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                  "connector": {
+                                    "name": "<+repeat.item>-initialsetup",
+                                    "identifier": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>_initialsetup",
+                                    "description": "",
+                                    "orgIdentifier": "<+org.identifier>",
+                                    "projectIdentifier": "<+project.identifier>",
+                                    "type": "JDBC",
+                                    "spec": {
+                                      "type": "JDBC",
+                                      "url": "jdbc:sqlserver://sql-server-service.<+repeat.item>;database=master;trustServerCertificate=true",
+                                      "auth": {
+                                        "type": "UsernamePassword",
+                                        "spec": {
+                                          "username": "sa",
+                                          "passwordRef": "mysql_sa_password"
+                                        }
+                                      },
+                                      "delegateSelectors": ["<+pipeline.variables.delegate_name>"]
+                                    }
+                                  }
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: Create Setup - DBInstance
+                      identifier: Create_DBSchema
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/v1/orgs/<+org.identifier>/projects/<+project.identifier>/dbschema/Initial_Setup/instance' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                    "branch": "main",
+                                    "connector": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>_initialsetup",
+                                    "identifier": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>",
+                                    "name": "<+repeat.item>",
+                                    "tags": {
+                                       "environment": "<+execution.steps.make_idenditifier.output.outputVariables.environment>"
+                                    }
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Create DB Instance
+                      identifier: Create_DB_Instance
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              #!/bin/bash -v
+                              echo on
+                              curl -i -X POST \
+                                'https://app.harness.io/gateway/v1/orgs/<+org.identifier>/projects/<+project.identifier>/dbschema/db_devops_demo/instance' \
+                                -H 'Content-Type: application/json' \
+                                -H 'Harness-Account: <+account.identifier>' \
+                                -H 'x-api-key: <+secrets.getValue("apiKey")>' \
+                                -d '{
+                                    "branch": "<+execution.steps.make_idenditifier.output.outputVariables.environment>",
+                                    "connector": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>",
+                                    "identifier": "<+execution.steps.make_idenditifier.output.outputVariables.identifier>",
+                                    "name": "<+repeat.item>",
+                                    "tags": {
+                                       "environment": "<+execution.steps.make_idenditifier.output.outputVariables.environment>"
+                                    }
+                                }'
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+        strategy:
+          repeat:
+            items:
+              - production-us
+              - staging
+              - development
+              - testenv
+              - production-eu
+              - production-apj-north
+              - production-af
+              - production-me
+              - production-apj-south
+            maxConcurrency: 5
+    - parallel:
+        - stage:
+            name: deploy database
+            identifier: deploy_database
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: k8s_sql_server
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 20m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+              environments:
+                metadata:
+                  parallel: true
+                values:
+                  - environmentRef: my_cluster
+                    deployToAll: false
+                    infrastructureDefinitions:
+                      - identifier: mssqlstaging
+                      - identifier: development
+                      - identifier: test
+                      - identifier: productioneu
+                      - identifier: productionapjnorth
+                      - identifier: productionaf
+                      - identifier: productionme
+                      - identifier: productionapjsouth
+                      - identifier: productionus
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: secret
+                type: String
+                description: ""
+                required: false
+                value: <+secrets.getValue("mysql_sa_password")>
+        - stage:
+            name: deploy oracle
+            identifier: deploy_oracle
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: k8s_oracle_server
+              environment:
+                environmentRef: my_cluster
+                deployToAll: false
+                infrastructureDefinitions:
+                  - identifier: oracle
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: secret
+                type: String
+                description: ""
+                required: false
+                value: <+secrets.getValue("mysql_sa_password")>
+            when:
+              pipelineStatus: Success
+              condition: "false"
+    - stage:
+        name: deploydb
+        identifier: deploydb
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - stepGroup:
+                      name: production-us
+                      identifier: db
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-Production
+                            identifier: ApplyProduction
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_us
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: staging
+                      identifier: staging
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: staging
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: development
+                      identifier: development
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-development
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: development
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: production-af
+                      identifier: production_af
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_af
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: production_apj_north
+                      identifier: production_apj_north
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_apj_north
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: production-eu
+                      identifier: production_eu
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_eu
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: production_me
+                      identifier: production_me
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_me
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: testenv
+                      identifier: testenv
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: testenv
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                  - stepGroup:
+                      name: production-apj-south
+                      identifier: production_apj_south
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply-staging
+                            identifier: Applystaging
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: Initial_Setup
+                              dbInstance: production_apj_south
+                              tag: initialSetup
+                            timeout: 10m
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+  variables:
+    - name: user
+      type: String
+      description: ""
+      required: false
+      value: sa
+    - name: delegate_name
+      type: String
+      description: ""
+      required: false
+      value: demo-delegate

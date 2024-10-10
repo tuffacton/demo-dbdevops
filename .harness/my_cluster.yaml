@@ -1,0 +1,8 @@
+environment:
+  name: my cluster
+  identifier: my_cluster
+  description: ""
+  tags: {}
+  type: PreProduction
+  orgIdentifier: default
+  projectIdentifier: default_project

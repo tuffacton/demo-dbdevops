@@ -1,0 +1,13 @@
+infrastructureDefinition:
+  name: oracle
+  identifier: oracle
+  orgIdentifier: default
+  projectIdentifier: default_project
+  environmentRef: my_cluster
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: k8s_cluster_try_3
+    namespace: oracle
+    releaseName: release-<+INFRA_KEY_SHORT_ID>
+  allowSimultaneousDeployments: false

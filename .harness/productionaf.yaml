@@ -1,0 +1,13 @@
+infrastructureDefinition:
+  name: production-af
+  identifier: productionaf
+  orgIdentifier: default
+  projectIdentifier: default_project
+  environmentRef: my_cluster
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: k8s_cluster_try_3
+    namespace: production-af
+    releaseName: release-<+INFRA_KEY_SHORT_ID>
+  allowSimultaneousDeployments: false

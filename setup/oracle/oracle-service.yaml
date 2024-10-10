@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: db23cfree-oracle-db
+  name: db23cfree-oracle-db
+spec:
+  ports:
+  - name: listener
+    port: 1521
+    targetPort: 1521
+    protocol: TCP
+  - name: xmldb
+    port: 5500
+    targetPort: 5500
+    protocol: TCP
+  selector:
+    app: db23cfree-oracle-db
+  sessionAffinity: None

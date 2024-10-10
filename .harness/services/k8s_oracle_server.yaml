@@ -1,0 +1,28 @@
+service:
+  name: k8s oracle server
+  identifier: k8s_oracle_server
+  orgIdentifier: default
+  projectIdentifier: default_project
+  serviceDefinition:
+    spec:
+      manifests:
+        - manifest:
+            identifier: oracle
+            type: K8sManifest
+            spec:
+              store:
+                type: Github
+                spec:
+                  connectorRef: demodbdevops
+                  gitFetchType: Branch
+                  paths:
+                    - setup/oracle/oracle-deployment.yaml
+                    - setup/oracle/oracle-pvc.yaml
+                    - setup/oracle/oracle-service.yaml
+                  repoName: demo-dbdevops
+                  branch: main
+              valuesPaths:
+                - setup/values.yml
+              skipResourceVersioning: false
+              enableDeclarativeRollback: false
+    type: Kubernetes

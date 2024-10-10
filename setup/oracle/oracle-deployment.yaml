@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: db23cfree-oracle-db
+  name: db23cfree-oracle-db
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: db23cfree-oracle-db
+  strategy:
+    rollingUpdate:
+      maxSurge: 100
+      maxUnavailable: 100
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: db23cfree-oracle-db
+    spec:
+      containers:
+      - env:
+        - name: SVC_HOST
+          value: db23cfree-oracle-db
+        - name: SVC_PORT
+          value: "1521"
+        - name: ORACLE_SID
+          value: free
+        - name: ORACLE_PDB
+          value: FREEPDB1
+        - name: ORACLE_PWD
+          value: {{.Values.secret}}
+        - name: ORACLE_CHARACTERSET
+          value: AL32UTF8
+        - name: ORACLE_EDITION
+          value: free
+        - name: ENABLE_ARCHIVELOG
+          value: "false"
+        image: container-registry.oracle.com/database/free:23.3.0.0
+        imagePullPolicy: Always
+        name: oracle-db
+        ports:
+        - containerPort: 1521
+          protocol: TCP
+        - containerPort: 5500
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - 'if [ -f $ORACLE_BASE/checkDBLockStatus.sh ]; then $ORACLE_BASE/checkDBLockStatus.sh
+              ; else $ORACLE_BASE/checkDBStatus.sh; fi '
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 40
+          successThreshold: 1
+          timeoutSeconds: 20
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/oracle/oradata
+          name: datamount
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 54321
+        runAsUser: 54321
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: datamount
+        persistentVolumeClaim:
+          claimName: db23cfree-oracle-db

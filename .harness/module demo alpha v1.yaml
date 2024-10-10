@@ -1,0 +1,186 @@
+pipeline:
+  projectIdentifier: default_project
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: DB Migrate
+        identifier: DB_Migrate
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: Liquibase Update
+                  identifier: Liquibase_Update
+                  steps:
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history_before_run
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                    - step:
+                        type: DBSchemaApply
+                        name: DBSchemaApply_1
+                        identifier: DBSchemaApply_1
+                        spec:
+                          connectorRef: account.harnessImage
+                          resources:
+                            limits:
+                              memory: 1Gi
+                              cpu: "0.5"
+                          dbSchema: db_devops_demo
+                          dbInstance: ms_sql
+                          tag: <+stage.variables.tag>
+                        timeout: 10m
+                        enforce:
+                          policySets:
+                            - dsad
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                  stepGroupInfra:
+                    type: KubernetesDirect
+                    spec:
+                      connectorRef: k8s_cluster_try_3
+                      namespace: yogeshc
+                      initTimeout: 10m
+                  when:
+                    stageStatus: Success
+                    condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+              - stepGroup:
+                  name: Liquibase Rollback
+                  identifier: Liquibase_Rollback
+                  steps:
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history_before_run
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                    - step:
+                        type: DBSchemaRollback
+                        name: DBSchemaRollback_1
+                        identifier: DBSchemaRollback_1
+                        spec:
+                          connectorRef: account.harnessImage
+                          resources:
+                            limits:
+                              memory: 1Gi
+                              cpu: "0.5"
+                          dbSchema: db_devops_demo
+                          dbInstance: ms_sql
+                          tag: <+stage.variables.rollback_tag>
+                        timeout: 10m
+                        enforce:
+                          policySets:
+                            - dsad
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                  stepGroupInfra:
+                    type: KubernetesDirect
+                    spec:
+                      connectorRef: k8s_cluster_try_3
+                      namespace: yogeshc
+                      initTimeout: 10m
+                  when:
+                    stageStatus: Success
+                    condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors: []
+              action:
+                type: Abort
+        variables:
+          - name: rollback_tag
+            type: String
+            description: Specify this if you wish to rollback to the particular tag
+            required: false
+            value: <+input>
+          - name: branch
+            type: String
+            description: ""
+            required: true
+            value: main
+          - name: changelogfile
+            type: String
+            description: ""
+            required: false
+            value: example-changelog.yaml
+          - name: tag
+            type: String
+            description: Argument to Liquibase Tag Command
+            required: false
+            value: <+input>
+          - name: server_jdbc_url
+            type: String
+            description: JDBC URL of the target server
+            required: false
+            value: <+pipeline.variables.server_jdbc_url>
+          - name: arch
+            type: String
+            description: ""
+            required: false
+            value: latest
+  tags:
+    demo: ""
+  variables:
+    - name: server_jdbc_url
+      type: String
+      description: ""
+      required: false
+      value: jdbc:sqlserver://<+variable.sql_server_ip_address>;database=MyTestDataBase;trustServerCertificate=true
+    - name: user
+      type: String
+      description: ""
+      required: false
+      value: <+secrets.getValue("mysql_sa_user")>
+  identifier: POC_Drone_Plugin_Clone
+  name: Module Demo - simple

@@ -1,0 +1,13 @@
+infrastructureDefinition:
+  name: default
+  identifier: sqlserver
+  orgIdentifier: default
+  projectIdentifier: default_project
+  environmentRef: my_cluster
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: k8s_cluster_try_3
+    namespace: default
+    releaseName: release-<+INFRA_KEY_SHORT_ID>
+  allowSimultaneousDeployments: false

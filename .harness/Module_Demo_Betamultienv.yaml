@@ -1,0 +1,615 @@
+pipeline:
+  projectIdentifier: default_project
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: DB Migrate
+        identifier: DB_Migrate
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - stepGroup:
+                      name: Update Staging
+                      identifier: Liquibase_Update_staging
+                      steps:
+                        - parallel:
+                            - step:
+                                type: DBSchemaApply
+                                name: Apply To Staging
+                                identifier: Apply_To_Staging
+                                spec:
+                                  connectorRef: account.harnessImage
+                                  resources:
+                                    limits:
+                                      memory: 500Mi
+                                      cpu: 400m
+                                  dbSchema: db_devops_demo
+                                  dbInstance: staging
+                                  tag: <+stage.variables.tag>
+                                timeout: 10m
+                                when:
+                                  stageStatus: Success
+                                  condition: <+pipeline.variables.trigger_branch> == "staging"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-us
+                      identifier: Liquibase_Update_prod_us
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-us
+                            identifier: Apply_to_Production_us
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_us
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-af
+                      identifier: Liquibase_Update_prod_af
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-af
+                            identifier: Apply_to_Production_af
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_af
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-apj_north
+                      identifier: Liquibase_Update_prod_apj_north
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-apj-north
+                            identifier: Apply_to_Production_apj_north
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_apj_north
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-apj_south
+                      identifier: Liquibase_Update_prod_apj_south
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-apj-south
+                            identifier: Apply_to_Production_apj_south
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_apj_south
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-eu
+                      identifier: Liquibase_Update_prod_eu
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-eu
+                            identifier: Apply_to_Production_eu
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_eu
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update Production-me
+                      identifier: Liquibase_Update_prod_me
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to Production-me
+                            identifier: Apply_to_Production_me
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_me
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update testenv
+                      identifier: Liquibase_Update_testenv
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to testenv
+                            identifier: Apply_to_testenv
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: testenv
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "testenv"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+                  - stepGroup:
+                      name: Update development
+                      identifier: Liquibase_Update_development
+                      steps:
+                        - step:
+                            type: DBSchemaApply
+                            name: Apply to development
+                            identifier: Apply_to_development
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: development
+                              tag: <+stage.variables.tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "development"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> == "" || <+stage.variables.rollback_tag> ==null
+              - parallel:
+                  - stepGroup:
+                      name: Liquibase Rollback Staging
+                      identifier: Liquibase_Rollback_staging
+                      steps:
+                        - parallel:
+                            - step:
+                                type: DBSchemaRollback
+                                name: Rollback Staging
+                                identifier: Rollback_Staging
+                                spec:
+                                  connectorRef: account.harnessImage
+                                  resources:
+                                    limits:
+                                      memory: 500Mi
+                                      cpu: 400m
+                                  dbSchema: db_devops_demo
+                                  dbInstance: staging
+                                  tag: <+stage.variables.rollback_tag>
+                                timeout: 10m
+                                when:
+                                  stageStatus: Success
+                                  condition: <+pipeline.variables.trigger_branch> == "staging"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Rollback Production-us
+                      identifier: Liquibase_rollback_prod_us
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_us
+                            identifier: DBSchemaRollback_2
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_us
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Rollback Development
+                      identifier: Liquibase_rollback_development
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_development
+                            identifier: DBSchemaRollback_development
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: development
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "development"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Rollback Production-af
+                      identifier: Liquibase_rollback_prod_af
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_af
+                            identifier: DBSchemaRollback_prod_af
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_af
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Update Production-apj_north
+                      identifier: Liquibase_rollback_prod_apj_north
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_apj_north
+                            identifier: DBSchemaRollback_apj_north
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_apj_north
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Update Production-apj_south
+                      identifier: Liquibase_rollback_prod_apj_south
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_apj_south
+                            identifier: DBSchemaRollback_apj_south
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_apj_south
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Update Production-eu
+                      identifier: Liquibase_rollback_prod_eu
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_eu
+                            identifier: DBSchemaRollback_eu
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_eu
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Update Production-me
+                      identifier: Liquibase_rollback_prod_me
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_production_me
+                            identifier: DBSchemaRollback_me
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: production_me
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "production"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+                  - stepGroup:
+                      name: Update Production-testenv
+                      identifier: Liquibase_rollback_testenv
+                      steps:
+                        - step:
+                            type: DBSchemaRollback
+                            name: rollback_testenv
+                            identifier: DBSchemaRollback_testenv
+                            spec:
+                              connectorRef: account.harnessImage
+                              resources:
+                                limits:
+                                  memory: 500Mi
+                                  cpu: 400m
+                              dbSchema: db_devops_demo
+                              dbInstance: testenv
+                              tag: <+stage.variables.rollback_tag>
+                            timeout: 10m
+                            when:
+                              stageStatus: Success
+                              condition: <+pipeline.variables.trigger_branch> == "testenv"
+                      stepGroupInfra:
+                        type: KubernetesDirect
+                        spec:
+                          connectorRef: k8s_cluster_try_3
+                          namespace: yogeshc
+                          initTimeout: 10m
+                      when:
+                        stageStatus: Success
+                        condition: <+stage.variables.rollback_tag> != "" && <+stage.variables.rollback_tag> != null
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors: []
+              action:
+                type: Abort
+        variables:
+          - name: rollback_tag
+            type: String
+            description: Specify this if you wish to rollback to the particular tag
+            required: false
+            value: <+input>
+          - name: branch
+            type: String
+            description: ""
+            required: true
+            value: main
+          - name: changelogfile
+            type: String
+            description: ""
+            required: false
+            value: example-changelog.yaml
+          - name: tag
+            type: String
+            description: Argument to Liquibase Tag Command
+            required: false
+            value: <+input>
+          - name: server_jdbc_url
+            type: String
+            description: JDBC URL of the target server
+            required: false
+            value: <+pipeline.variables.server_jdbc_url>
+          - name: arch
+            type: String
+            description: ""
+            required: false
+            value: latest
+  tags:
+    demo: ""
+  variables:
+    - name: server_jdbc_url
+      type: String
+      description: ""
+      required: false
+      value: jdbc:sqlserver://<+variable.sql_server_ip_address>;database=MyTestDataBase;trustServerCertificate=true
+    - name: user
+      type: String
+      description: ""
+      required: false
+      value: <+secrets.getValue("mysql_sa_user")>
+    - name: trigger_branch
+      type: String
+      description: ""
+      required: true
+      value: <+input>
+  identifier: Module_Demo_Betamultienv
+  name: Module Demo - Beta-multi-env

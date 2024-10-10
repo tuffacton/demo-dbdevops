@@ -1,0 +1,19 @@
+inputSet:
+  name: from trigger
+  tags: {}
+  identifier: from_trigger
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: POC_Drone_Plugin_Clone
+    stages:
+      - stage:
+          identifier: DB_Migrate
+          type: Custom
+          variables:
+            - name: rollback_tag
+              type: String
+              value: <+input>
+            - name: tag
+              type: String
+              value: <+trigger.commitSha>
